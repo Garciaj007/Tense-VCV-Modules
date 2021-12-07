@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="100mm"
+   height="100mm"
+   viewBox="0 0 100 100"
+   version="1.1"
+   id="svg21103"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   sodipodi:docname="Components Library.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview21105"
+     pagecolor="#000000"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="true"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.3416246"
+     inkscape:cx="126.71205"
+     inkscape:cy="141.24667"
+     inkscape:window-width="1280"
+     inkscape:window-height="1057"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs21100" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="circle51804"
+       style="fill:#f2f2f2;fill-opacity:1;stroke-width:1.37125;stroke-linecap:round;stroke-linejoin:round"
+       d="m 13.904775,17.223516 v 0.199988 c 2.058649,0.05418 3.699501,1.738342 3.700032,3.797699 -0.0032,0.971863 -0.37857,1.905577 -1.049031,2.609144 l -0.283704,-0.283186 -0.141593,0.141594 0.424263,0.424262 0.141594,-0.141592 c 0.708179,-0.740878 1.104955,-1.725326 1.108459,-2.750222 -5.82e-4,-2.169779 -1.730919,-3.943453 -3.90002,-3.997687 z m -0.199988,0.0047 c -2.167296,0.05419 -3.8969238,1.825064 -3.9000198,3.993036 0.0034,1.024824 0.3999518,2.009259 1.1079428,2.750222 l 0.141593,0.141543 0.424263,-0.424262 -0.141593,-0.141594 -0.283187,0.283186 c -0.670461,-0.703567 -1.045869,-1.637279 -1.049031,-2.609144 0.0031,-2.05755 1.643187,-3.738924 3.700032,-3.793048 z" />
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:2px;line-height:1.25;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+       x="10.275079"
+       y="16.671312"
+       id="text51808"><tspan
+         sodipodi:role="line"
+         id="tspan51806"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="10.275079"
+         y="16.671312">OFFSET</tspan></text>
+    <circle
+       style="fill:#f2f2f2;fill-opacity:1;stroke-width:1.37125;stroke-linecap:round;stroke-linejoin:round"
+       id="circle4918"
+       cx="13.804864"
+       cy="21.221117"
+       r="3" />
+    <rect
+       style="fill:#f2f2f2;fill-opacity:1;stroke-width:0.0590149;stroke-linecap:round;stroke-linejoin:round"
+       id="rect12420"
+       width="0.2"
+       height="0.60000002"
+       x="13.704808"
+       y="17.423449"
+       inkscape:transform-center-y="-3.4976685"
+       inkscape:transform-center-x="5.7600439e-05" />
+    <rect
+       style="fill:#e4572e;fill-opacity:1;stroke-width:1.097;stroke-linecap:round;stroke-linejoin:round"
+       id="rect10612"
+       width="15.24"
+       height="4"
+       x="7.959682"
+       y="4.9023895" />
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:4px;line-height:1.25;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+       x="8.1425714"
+       y="8.3301163"
+       id="text10729"><tspan
+         sodipodi:role="line"
+         id="tspan10727"
+         style="font-size:4px;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="8.1425714"
+         y="8.3301163">BH</tspan></text>
+    <g
+       id="g13800"
+       transform="translate(16.472852,-20.475119)">
+      <path
+         id="circle40599"
+         style="fill:#f2f2f2;fill-opacity:1;stroke-width:1.37125;stroke-linecap:round;stroke-linejoin:round"
+         d="m 7.5871664,37.497793 c -2.2093517,-1.51e-4 -4.0004229,1.79092 -4.0002724,4.000273 0.00337,1.024823 0.3999519,2.009261 1.1079427,2.750222 L 4.8364301,44.389879 5.2606934,43.965617 5.1191001,43.824023 4.8359133,44.107209 C 4.1654518,43.403642 3.790043,42.469928 3.7868817,41.498066 c 1.294e-4,-2.098702 1.701583,-3.799922 3.8002847,-3.799766 2.0985001,1.27e-4 3.7996386,1.701265 3.7997686,3.799766 -0.0032,0.971862 -0.37857,1.905576 -1.049032,2.609143 l -0.283703,-0.283186 -0.141594,0.141594 0.424264,0.424262 0.141593,-0.141591 c 0.70818,-0.740879 1.104956,-1.725327 1.10846,-2.750222 1.5e-4,-2.20915 -1.7906064,-4.000138 -3.9997566,-4.000273 z" />
+      <text
+         xml:space="preserve"
+         style="font-weight:bold;font-size:2px;line-height:1.25;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="4.7624807"
+         y="36.948242"
+         id="text51904"><tspan
+           sodipodi:role="line"
+           id="tspan51902"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+           x="4.7624807"
+           y="36.948242">SCALE</tspan></text>
+      <circle
+         style="fill:#f2f2f2;fill-opacity:1;stroke-width:1.37125;stroke-linecap:round;stroke-linejoin:round"
+         id="circle8928"
+         cx="7.5869598"
+         cy="41.498047"
+         r="3" />
+    </g>
+    <circle
+       style="fill:#f2f2f2;fill-opacity:1;stroke-width:1.6455;stroke-linecap:round;stroke-linejoin:round"
+       id="circle13818"
+       cx="11.038479"
+       cy="31.553787"
+       r="1" />
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:2px;line-height:1.25;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans Bold';letter-spacing:0px;word-spacing:0px;fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+       x="13.098099"
+       y="32.268143"
+       id="text13952"><tspan
+         sodipodi:role="line"
+         id="tspan13950"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2px;font-family:'Noto Sans';-inkscape-font-specification:'Noto Sans';fill:#f2f2f2;fill-opacity:1;stroke-width:0.264583"
+         x="13.098099"
+         y="32.268143">RESET</tspan></text>
+  </g>
+</svg>
