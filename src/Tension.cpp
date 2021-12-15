@@ -38,7 +38,6 @@ struct Tension : Module
 	int clockMode = ClockMode::CLOCK;
 	int easeType = Ease::LINEAR;
 	int easeMode = Ease::BOTH;
-	int easeDirection = Ease::FORWARD;
 	int voltagePairs = VoltagePairs::NEGATIVE_10_TO_10;
 
 	bool shouldResetHard = false;
@@ -60,7 +59,7 @@ struct Tension : Module
 	bool isClockConnected = false;
 	bool firstClockReceived = false;
 	bool secondClockReceived = false;
-	bool b_buttonState = false;
+	bool b_buttonState = true;
 
 	float bufferedShapeKnob = 0.f;
 	float bufferedRatioKnob = 0.f;
@@ -70,7 +69,7 @@ struct Tension : Module
 	double evaluate(double x)
 	{
 		//return Ease::EnumToFunction(Ease::Type(easeType))(Ease::Mode(easeMode), x, duration, amplitude, offset);
-		return Ease::EnumToFunction(Ease::Type(easeType))(Ease::Mode(easeMode), x, duration, 2.0, 0.0);
+		return Ease::EnumToFunction(Ease::Type(easeType))(Ease::Mode(easeMode), x);
 	}
 
 	Tension()
@@ -78,13 +77,13 @@ struct Tension : Module
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(TRIGGER_PARAM, 0.f, 1.f, 0.f, "");
 		configParam(RESET_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SHAPESLIDER_PARAM, 0.f, 1.f, 0.f, "");
+		configParam(SHAPESLIDER_PARAM, 0.0, Ease::Type::COUNT, 0.f, "");
 
 		// Ratio Knob [IMPROMPTU MODULAR]
 		// configParam<RatioParam>(RATIOSLIDER_PARAM, ((float)NUM_RATIOS - 1.0f) * -1.0f, float(NUM_RATIOS) - 1.0f, 0.0f, "Clock Ratio");
 
 		// Ratio Knob [FROZEN WASTELAND]
-		configParam(RATIOSLIDER_PARAM, 0.0, 26.0, 13.0);
+		configParam(RATIOSLIDER_PARAM, 0.0, DIVISION_COUNT - 1, (DIVISION_COUNT - 1) / 2);
 
 		//	TODO V2
 		//	paramQuantities[RATIOSLIDER_PARAM]->snapEnabled = true; Enable Snapping Later in VCV Rack v2
@@ -95,16 +94,14 @@ struct Tension : Module
 		//	configOutput(OUTPUT_OUTPUT, "CV OUT");
 
 		onReset();
-
-		// leftExpander.producerMessage = producerMessage;
-		// leftExpander.consumerMessage = consumerMessage;
 	}
 
+	// Direction Must Always be FORWARD!!!!
 	void step(double dt)
 	{
 		double delta = fmin(freq * dt, 0.5);
-		phase += b_buttonState ? -delta : delta;
-		phase = clamp(phase,0.0f, 1.0f);
+		phase += delta;
+		phase = clamp(phase);
 	}
 
 	void onReset() override {}
@@ -112,13 +109,15 @@ struct Tension : Module
 	void reset(bool hard)
 	{
 		// sampleRate = (double)(APP->engine->getSampleRate());
-		// sampleTime = 1.0 / sampleRate;
 
 		// bufferedRatioKnob = params[RATIOSLIDER_PARAM].getValue();
+		
+		// Reset The Phase...
+		//phase = 0.0;
+		phase = 1.0 - phase;
 
 		if (hard)
 		{
-			phase = 0.0;
 			params[TRIGGER_PARAM].setValue(0.0);
 			b_buttonState = false;
 		}
@@ -199,6 +198,7 @@ struct Tension : Module
 			if (bufferedShapeKnob != shape_value)
 			{
 				bufferedShapeKnob = shape_value;
+				easeType = int(clamp(bufferedShapeKnob, 0.0f, (float)Ease::Type::COUNT - 1));
 			}
 
 			const auto ratio_value = params[RATIOSLIDER_PARAM].getValue();
@@ -239,10 +239,15 @@ struct Tension : Module
 
 		step(1.0 / args.sampleRate);
 
-		// Light Processing... // Call this to increment Refresh Count 
-		if(refreshCounter.processLights()) { }
+		// Light Processing... // Call this to increment Refresh Count
+		if (refreshCounter.processLights())
+		{
+		}
 
-		outputs[OUTPUT_OUTPUT].setVoltage(evaluate(phase));
+		double tension = b_buttonState ? 1 - evaluate(phase) : evaluate(phase);
+
+		//outputs[GATEOUTPUT_OUTPUT].setVoltage(phase);
+		outputs[OUTPUT_OUTPUT].setVoltage(tension);
 	}
 };
 
@@ -264,18 +269,11 @@ struct TensionWidget : ModuleWidget
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.763, 101.659)), module, Tension::GATEOUTPUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.763, 116.899)), module, Tension::OUTPUT_OUTPUT));
 
-		// // mm2px(Vec(12.192, 5.0))
-		// addChild(createWidget<Widget>(mm2px(Vec(1.574, 24.703))));
-		// // mm2px(Vec(12.192, 5.0))
-		// addChild(createWidget<Widget>(mm2px(Vec(1.574, 43.702))));
-
-		{
-			BHTensionDisplay *display = new BHTensionDisplay();
-			display->module = module;
-			display->shapeRect = Rect(mm2px(Vec(1.574, 24.703)), mm2px(Vec(12.192, 5.0)));
-			display->ratioRect = Rect(mm2px(Vec(1.574, 43.702)), mm2px(Vec(12.192, 5.0)));
-			addChild(display);
-		}
+		BHTensionDisplay *display = new BHTensionDisplay();
+		display->module = module;
+		display->shapeRect = Rect(mm2px(Vec(1.574, 24.703)), mm2px(Vec(12.192, 5.0)));
+		display->ratioRect = Rect(mm2px(Vec(1.574, 43.702)), mm2px(Vec(12.192, 5.0)));
+		addChild(display);
 	}
 
 	void appendContextMenu(Menu *menu) override
@@ -283,15 +281,18 @@ struct TensionWidget : ModuleWidget
 		Tension *module = dynamic_cast<Tension *>(this->module);
 		assert(module);
 
-		menu->addChild(new MenuSeparator());
-
-		makeAndAddLabel(menu, "Settings");
+		menu->addChild(new MenuSeparator);
 
 		// Clock Mode
 		menu->addChild(construct<ClockModeMenuItem>(&MenuItem::text, "Clock mode", &MenuItem::rightText, RIGHT_ARROW, &ClockModeMenuItem::module, module));
 
+		menu->addChild(new MenuSeparator());
+
 		// Easing
-		menu->addChild(construct<EaseMenuItem>(&MenuItem::text, "Ease", &MenuItem::rightText, RIGHT_ARROW, &EaseMenuItem::module, module));
+		menu->addChild(construct<EaseTypeMenuItem>(&MenuItem::text, "Shape", &MenuItem::rightText, RIGHT_ARROW, &EaseTypeMenuItem::module, module));
+		menu->addChild(construct<EaseModeMenuItem>(&MenuItem::text, "Mode", &MenuItem::rightText, RIGHT_ARROW, &EaseModeMenuItem::module, module));
+
+		menu->addChild(new MenuSeparator());
 
 		// Reset Hard
 		menu->addChild(construct<ResetHardMenuItem>(&MenuItem::text, "Reset Hard", &ResetHardMenuItem::module, module));
@@ -334,84 +335,17 @@ struct TensionWidget : ModuleWidget
 		}
 	};
 
-	struct EaseMenuItem : MenuItem
+	struct EaseTypeMenuItem : MenuItem
 	{
-		struct EaseTypeMenuItem : MenuItem
+		struct EaseTypeItem : MenuItem
 		{
-			struct EaseTypeItem : MenuItem
-			{
-				Tension *module;
-				Ease::Type type;
-				void onAction(const event::Action &e) override { module->easeType = type; }
-				void step() override
-				{
-					rightText = (module->easeType == type) ? CHECKMARK_STRING : "";
-					MenuItem::step();
-				}
-			};
-
 			Tension *module;
-			Menu *createChildMenu() override
+			Ease::Type type;
+			void onAction(const event::Action &e) override { module->easeType = type; }
+			void step() override
 			{
-				Menu *menu = new Menu;
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::LINEAR), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::LINEAR));
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::SINE), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::SINE));
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::EXPO), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::EXPO));
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::CIRC), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::CIRC));
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::CUBIC), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::CUBIC));
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::QUAD), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::QUAD));
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::QUART), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::QUART));
-				menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::QUINT), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::QUINT));
-				return menu;
-			}
-		};
-
-		struct EaseModeMenuItem : MenuItem
-		{
-			struct EaseModeItem : MenuItem
-			{
-				Tension *module;
-				Ease::Mode mode;
-				void onAction(const event::Action &e) override { module->easeMode = mode; }
-				void step() override
-				{
-					rightText = (module->easeMode == mode) ? CHECKMARK_STRING : "";
-					MenuItem::step();
-				}
-			};
-
-			Tension *module;
-			Menu *createChildMenu() override
-			{
-				Menu *menu = new Menu;
-				menu->addChild(construct<EaseModeItem>(&MenuItem::text, EnumToString(Ease::IN), &EaseModeItem::module, module, &EaseModeItem::mode, Ease::IN));
-				menu->addChild(construct<EaseModeItem>(&MenuItem::text, EnumToString(Ease::OUT), &EaseModeItem::module, module, &EaseModeItem::mode, Ease::OUT));
-				menu->addChild(construct<EaseModeItem>(&MenuItem::text, EnumToString(Ease::BOTH), &EaseModeItem::module, module, &EaseModeItem::mode, Ease::BOTH));
-				return menu;
-			}
-		};
-
-		struct EaseDirectionMenuItem : MenuItem
-		{
-			struct EaseDirectionItem : MenuItem
-			{
-				Tension *module;
-				Ease::Direction dir;
-				void onAction(const event::Action &e) override { module->easeDirection = dir; }
-				void step() override
-				{
-					rightText = (module->easeDirection == dir) ? CHECKMARK_STRING : "";
-					MenuItem::step();
-				}
-			};
-
-			Tension *module;
-			Menu *createChildMenu() override
-			{
-				Menu *menu = new Menu;
-				menu->addChild(construct<EaseDirectionItem>(&MenuItem::text, EnumToString(Ease::FORWARD), &EaseDirectionItem::module, module, &EaseDirectionItem::dir, Ease::FORWARD));
-				menu->addChild(construct<EaseDirectionItem>(&MenuItem::text, EnumToString(Ease::REVERSE), &EaseDirectionItem::module, module, &EaseDirectionItem::dir, Ease::REVERSE));
-				return menu;
+				rightText = (module->easeType == type) ? CHECKMARK_STRING : "";
+				MenuItem::step();
 			}
 		};
 
@@ -419,9 +353,42 @@ struct TensionWidget : ModuleWidget
 		Menu *createChildMenu() override
 		{
 			Menu *menu = new Menu;
-			menu->addChild(construct<EaseTypeMenuItem>(&MenuItem::text, "Shape", &MenuItem::rightText, RIGHT_ARROW, &EaseTypeMenuItem::module, module));
-			menu->addChild(construct<EaseModeMenuItem>(&MenuItem::text, "Mode", &MenuItem::rightText, RIGHT_ARROW, &EaseModeMenuItem::module, module));
-			menu->addChild(construct<EaseDirectionMenuItem>(&MenuItem::text, "Direction", &MenuItem::rightText, RIGHT_ARROW, &EaseDirectionMenuItem::module, module));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::LINEAR), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::LINEAR));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::SINE), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::SINE));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::EXPO), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::EXPO));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::CIRC), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::CIRC));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::CUBIC), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::CUBIC));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::QUAD), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::QUAD));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::QUART), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::QUART));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::QUINT), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::QUINT));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::BACK), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::BACK));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::ELASTIC), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::ELASTIC));
+			menu->addChild(construct<EaseTypeItem>(&MenuItem::text, EnumToString(Ease::BOUNCE), &EaseTypeItem::module, module, &EaseTypeItem::type, Ease::BOUNCE));
+			return menu;
+		}
+	};
+
+	struct EaseModeMenuItem : MenuItem
+	{
+		struct EaseModeItem : MenuItem
+		{
+			Tension *module;
+			Ease::Mode mode;
+			void onAction(const event::Action &e) override { module->easeMode = mode; }
+			void step() override
+			{
+				rightText = (module->easeMode == mode) ? CHECKMARK_STRING : "";
+				MenuItem::step();
+			}
+		};
+
+		Tension *module;
+		Menu *createChildMenu() override
+		{
+			Menu *menu = new Menu;
+			menu->addChild(construct<EaseModeItem>(&MenuItem::text, EnumToString(Ease::IN), &EaseModeItem::module, module, &EaseModeItem::mode, Ease::IN));
+			menu->addChild(construct<EaseModeItem>(&MenuItem::text, EnumToString(Ease::OUT), &EaseModeItem::module, module, &EaseModeItem::mode, Ease::OUT));
+			menu->addChild(construct<EaseModeItem>(&MenuItem::text, EnumToString(Ease::BOTH), &EaseModeItem::module, module, &EaseModeItem::mode, Ease::BOTH));
 			return menu;
 		}
 	};
@@ -440,16 +407,27 @@ struct TensionWidget : ModuleWidget
 			fontPath = std::string(asset::plugin(pluginInstance, "res/fonts/MajorMonoDisplay-Regular.ttf"));
 		}
 
-		void drawBpmRatio(const DrawArgs &args)
+		void drawBpmRatioText(const DrawArgs &args)
 		{
 			nvgFontSize(args.vg, 10);
 			nvgFontFaceId(args.vg, font->handle);
-
-			Vec textPos = Vec(ratioRect.pos.x - ratioRect.size.x / 8.0, ratioRect.pos.y + ratioRect.size.y - ratioRect.size.y / 4);
 			nvgFillColor(args.vg, Colors::LIGHT);
-			char text[32];
 
+			char text[32];
+			Vec textPos = Vec(ratioRect.pos.x - ratioRect.size.x / 8.0, ratioRect.pos.y + ratioRect.size.y - ratioRect.size.y / 4);
 			snprintf(text, sizeof(text), " %s", DIVISION_NAMES[module->division]);
+			nvgText(args.vg, textPos.x, textPos.y, text, NULL);
+		}
+
+		void drawTypeText(const DrawArgs &args)
+		{
+			nvgFontSize(args.vg, 10);
+			nvgFontFaceId(args.vg, font->handle);
+			nvgFillColor(args.vg, Colors::LIGHT);
+
+			char text[32];
+			Vec textPos = Vec(shapeRect.pos.x - shapeRect.size.x / 8.0, shapeRect.pos.y + shapeRect.size.y - shapeRect.size.y / 4);
+			snprintf(text, sizeof(text), " %s", Ease::TypeIdStrings[module->easeType]);
 			nvgText(args.vg, textPos.x, textPos.y, text, NULL);
 		}
 
@@ -496,9 +474,12 @@ struct TensionWidget : ModuleWidget
 			if (!module)
 				return;
 
-			drawBpmRatio(args);
-			drawShape(args);
-			drawProgress(args);
+			drawBpmRatioText(args);
+			drawTypeText(args);
+			
+			// TODO...
+			// drawShape(args);
+			// drawProgress(args);
 		}
 	};
 };

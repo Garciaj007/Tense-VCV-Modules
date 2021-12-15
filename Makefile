@@ -18,5 +18,16 @@ SOURCES += $(wildcard src/*.cpp)
 DISTRIBUTABLES += res
 DISTRIBUTABLES += $(wildcard LICENSE*)
 
+# Static Libs
+midifile := dep/lib/libmidifile.a
+OBJECTS += $(libmidifile)
+
+# Dependencies
+DEPS += $(libmidifile)
+
+# midifile
+$(libmidifile):
+	cd dep/midifile && $(MAKE) library
+
 # Include the Rack plugin Makefile framework
 include $(RACK_DIR)/plugin.mk

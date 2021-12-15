@@ -31,7 +31,12 @@ static constexpr float DURATION_MAX_F = 60.0f / BPM_MAX;
 
 static const float DIVISIONS[] = {1 / 64.0, 1 / 32.0, 1 / 16.0, 1 / 13.0, 1 / 11.0, 1 / 8.0, 1 / 7.0, 1 / 6.0, 1 / 5.0, 1 / 4.0, 1 / 3.0, 1 / 2.0, 1 / 1.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8, 11, 13, 16, 32, 64};
 static const char *DIVISION_NAMES[] = {"/64", "/32", "/16", "/13", "/11", "/8", "/7", "/6", "/5", "/4", "/3", "/2", "/1.5", "x1", "x1.5", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x11", "x13", "x16", "x32", "x64"};
+static constexpr int DIVISION_COUNT = sizeof(DIVISIONS) / sizeof(DIVISIONS[0]);
 
+inline double clamp(double x, double a = 0., double b = 1.)
+{
+    return std::fmax(std::fmin(x, b), a);
+}
 struct Colors
 {
     static const NVGcolor BG;
@@ -215,13 +220,6 @@ struct RatioParam : ParamQuantity
         return std::string(" (÷)");
     }
 };
-
-static void makeAndAddLabel(Menu *menu, std::string text)
-{
-    auto *label = new MenuLabel();
-    label->text = text;
-    menu->addChild(label);
-}
 
 template <typename T, typename Ret>
 static bool getFromJson(T &value, const json_t *json, const char *key, Ret (*func)(const json_t *))

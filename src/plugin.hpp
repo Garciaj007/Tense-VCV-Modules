@@ -21,3 +21,4 @@ extern Plugin* pluginInstance;
 
 // Declare each Model, defined in each module source file
 extern Model* modelTension;
+extern Model* modelTenseMidiRecorder;

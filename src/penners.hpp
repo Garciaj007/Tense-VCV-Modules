@@ -57,25 +57,28 @@ struct Ease
         CUBIC,
         QUAD,
         QUART,
-        QUINT
+        QUINT,
+        BACK,
+        ELASTIC,
+        BOUNCE,
+        COUNT
     };
     static const char *TypeStrings[];
+    static const char *TypeIdStrings[];
 
-    // Might Delete???
-    enum Direction
-    {
-        FORWARD,
-        REVERSE,
-        PINGPONG
-    };
-    static const char *DirectionStrings[];
-
-    using Func = double (*)(Mode mode, double time, double duration, double amplitude, double offset);
+    // mode, Where mode = Ease::Mode, x, Where x = 0...1
+    using Func = double (*)(Mode mode, double x);
 
     static Func EnumToFunction(Type type)
     {
         switch (type)
         {
+        case BOUNCE:
+            return Bounce;
+        case ELASTIC:
+            return Elastic;
+        case BACK:
+            return Back;
         case QUINT:
             return Quint;
         case QUART:
@@ -96,144 +99,206 @@ struct Ease
         }
     }
 
-    static double Linear(Mode mode, double t, double d, double amp, double off)
+    static double Linear(Mode mode, double x)
     {
-        return amp * t / d + off;
+        return x;
     }
 
-    static double Sine(Mode mode, double t, double d, double amp, double off)
+    static double Sine(Mode mode, double x)
     {
         switch (mode)
         {
         case Mode::IN:
-            return -amp * cos(t / d * (PI / 2)) + amp + off;
+            return 1.0 - cos((x * PI) / 2.0);
         case Mode::OUT:
-            return amp * sin(t / d * (PI / 2)) + off;
+            return sin((x * PI) / 2);
         case Mode::BOTH:
         default:
-            return -amp / 2 * (cos(PI * t / d) - 1) + off;
+            return -(cos(PI * x) - 1) / 2;
         }
     }
 
-    static double Expo(Mode mode, double t, double d, double amp, double off)
+    static double Expo(Mode mode, double x)
     {
         switch (mode)
         {
         case Mode::IN:
-            return (t == 0) ? off : amp * pow(2, 10 * (t / d - 1)) + off;
+            return x == 0 ? 0 : pow(2, 10 * x - 10);
         case Mode::OUT:
-            return (t == d) ? off + amp : amp * (-pow(2, -10 * t / d) + 1) + off;
+            return x == 1 ? 1 : 1 - pow(2, -10 * x);
         case Mode::BOTH:
         default:
-        {
-            if (t == 0)
-                return off;
-            if (t == d)
-                return off + amp;
-            if ((t /= d / 2) < 1)
-                return amp / 2 * pow(2, 10 * (t - 1)) + off;
-            return amp / 2 * (-pow(2, -10 * --t) + 2) + off;
-        }
+            return x == 0
+                       ? 0
+                   : x == 1
+                       ? 1
+                   : x < 0.5 ? pow(2, 20 * x - 10) / 2
+                             : (2 - pow(2, -20 * x + 10)) / 2;
         }
     }
 
-    static double Circ(Mode mode, double t, double d, double amp, double off)
+    static double Circ(Mode mode, double x)
     {
         switch (mode)
         {
         case Mode::IN:
-            return -amp * (sqrt(1 - (t /= d) * t) - 1) + off;
+            return 1 - sqrt(1 - pow(x, 2));
         case Mode::OUT:
-            return amp * sqrt(1 - (t = t / d - 1) * t) + off;
+            return sqrt(1 - pow(x - 1, 2));
         case Mode::BOTH:
         default:
-        {
-            if ((t /= d / 2) < 1)
-                return -amp / 2 * (sqrt(1 - t * t) - 1) + off;
-            return amp / 2 * (sqrt(1 - t * (t -= 2)) + 1) + off;
-        }
+            return x < 0.5
+                       ? (1 - sqrt(1 - pow(2 * x, 2))) / 2
+                       : (sqrt(1 - pow(-2 * x + 2, 2)) + 1) / 2;
         }
     }
 
-    static double Cubic(Mode mode, double t, double d, double amp, double off)
+    static double Cubic(Mode mode, double x)
     {
         switch (mode)
         {
         case Mode::IN:
-            return amp * (t /= d) * t * t + off;
+            return x * x * x;
         case Mode::OUT:
-            return amp * ((t = t / d - 1) * t * t + 1) + off;
+            return 1 - pow(1 - x, 3);
         case Mode::BOTH:
         default:
-        {
-            if ((t /= d / 2) < 1)
-                return amp / 2 * t * t * t + off;
-            return amp / 2 * ((t -= 2) * t * t + 2) + off;
-        }
+            return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
         }
     }
 
-    static double Quad(Mode mode, double t, double d, double amp, double off)
+    static double Quad(Mode mode, double x)
     {
         switch (mode)
         {
         case Mode::IN:
-            return amp * (t /= d) * t + off;
+            return x * x;
         case Mode::OUT:
-            return -amp * (t /= d) * (t - 2) + off;
+            return 1 - (1 - x) * (1 - x);
         case Mode::BOTH:
         default:
-        {
-            if ((t /= d / 2) < 1)
-                return ((amp / 2) * (t * t)) + off;
-            return -amp / 2 * (((t - 2) * (--t)) - 1) + off;
-        }
+            return x < 0.5 ? 2 * x * x : 1 - pow(-2 * x + 2, 2) / 2;
         }
     }
 
-    static double Quart(Mode mode, double t, double d, double amp, double off)
+    static double Quart(Mode mode, double x)
     {
         switch (mode)
         {
         case Mode::IN:
-            return amp * (t /= d) * t * t * t + off;
+            return x * x * x * x;
         case Mode::OUT:
-            return -amp * ((t = t / d - 1) * t * t * t - 1) + off;
+            return 1 - pow(1 - x, 4);
         case Mode::BOTH:
         default:
-        {
-            if ((t /= d / 2) < 1)
-                return amp / 2 * t * t * t * t + off;
-            return -amp / 2 * ((t -= 2) * t * t * t - 2) + off;
-        }
+            return x < 0.5 ? 8 * x * x * x * x : 1 - pow(-2 * x + 2, 4) / 2;
         }
     }
 
-    static double Quint(Mode mode, double t, double d, double amp, double off)
+    static double Quint(Mode mode, double x)
     {
         switch (mode)
         {
         case Mode::IN:
-            return amp * (t /= d) * t * t * t * t + off;
+            return x * x * x * x * x;
         case Mode::OUT:
-            return amp * ((t = t / d - 1) * t * t * t * t + 1) + off;
+            return 1 - pow(1 - x, 5);
+        case Mode::BOTH:
+        default:
+            return x < 0.5 ? 16 * x * x * x * x * x : 1 - pow(-2 * x + 2, 5) / 2;
+        }
+    }
+
+    static constexpr double c1 = 1.70158;
+    static constexpr double c2 = c1 * 1.525;
+    static constexpr double c3 = c1 + 1;
+    static double Back(Mode mode, double x)
+    {
+        switch (mode)
+        {
+        case Mode::IN:
+            return c3 * x * x * x - c1 * x * x;
+        case Mode::OUT:
+            return 1 + c3 * pow(x - 1, 3) + c1 * pow(x - 1, 2);
+        case Mode::BOTH:
+        default:
+            return x < 0.5
+                       ? (pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
+                       : (pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
+        }
+    }
+
+    static constexpr double c4 = (2 * PI) / 3;
+    static double Elastic(Mode mode, double x)
+    {
+        switch (mode)
+        {
+        case Mode::IN:
+            return x == 0
+                       ? 0
+                   : x == 1
+                       ? 1
+                       : -pow(2, 10 * x - 10) * sin((x * 10 - 10.75) * c4);
+        case Mode::OUT:
+            return x == 0
+                       ? 0
+                   : x == 1
+                       ? 1
+                       : pow(2, -10 * x) * sin((x * 10 - 0.75) * c4) + 1;
         case Mode::BOTH:
         default:
         {
-            if ((t /= d / 2) < 1)
-                return amp / 2 * t * t * t * t * t + off;
-            return amp / 2 * ((t -= 2) * t * t * t * t + 2) + off;
+            const double c2 = c1 * 1.525;
+            return x < 0.5
+                       ? (pow(2 * x, 2) * ((c2 + 1) * 2 * x - c2)) / 2
+                       : (pow(2 * x - 2, 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) / 2;
         }
+        }
+    }
+
+    static constexpr double n1 = 7.5625;
+    static constexpr double d1 = 2.75;
+    static double Bounce(Mode mode, double x)
+    {
+        switch (mode)
+        {
+        case Mode::IN:
+            return 1 - Bounce(Mode::OUT, 1 - x);
+        case Mode::OUT:
+        {
+            if (x < 1 / d1)
+            {
+                return n1 * x * x;
+            }
+            else if (x < 2 / d1)
+            {
+                return n1 * (x -= 1.5 / d1) * x + 0.75;
+            }
+            else if (x < 2.5 / d1)
+            {
+                return n1 * (x -= 2.25 / d1) * x + 0.9375;
+            }
+            else
+            {
+                return n1 * (x -= 2.625 / d1) * x + 0.984375;
+            }
+        }
+        case Mode::BOTH:
+        default:
+            return x < 0.5
+                       ? (1 - Bounce(Mode::OUT, 1 - 2 * x)) / 2
+                       : (1 + Bounce(Mode::OUT, 2 * x - 1)) / 2;
         }
     }
 };
 
-const char *Ease::ModeStrings[] = {"In", "Out", "Both"};
-const char *Ease::TypeStrings[] = {"Linear", "Sine", "Expo", "Circ", "Cubic", "Quad", "Quart", "Quint"};
-const char *Ease::DirectionStrings[] = {"Forward", "Reverse", "PingPng"};
-
 static const char *EnumToString(Ease::Mode mode) { return Ease::ModeStrings[mode]; }
 static const char *EnumToString(Ease::Type type) { return Ease::TypeStrings[type]; }
-static const char *EnumToString(Ease::Direction dir) { return Ease::DirectionStrings[dir]; }
+
+const char *Ease::TypeStrings[] = {
+    "Linear", "Sine", "Expo", "Circ", "Cubic", "Quad", "Quart", "Quint", "Back", "Elastic", "Bounce"};
+const char *Ease::TypeIdStrings[] = {
+    "Line", "Sine", "Expo", "Circ", "Cube", "Quad", "Qurt", "Qunt", "Back", "Elas", "Bunc"};
+const char *Ease::ModeStrings[] = {"In", "Out", "Both"};
 
 #pragma GCC diagnostic pop
