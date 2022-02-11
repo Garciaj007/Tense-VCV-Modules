@@ -225,7 +225,7 @@ template <typename T, typename Ret>
 static bool getFromJson(T &value, const json_t *json, const char *key, Ret (*func)(const json_t *))
 {
     json_t *json_object = json_object_get(json, key);
-    if (json_object)
+    if (json_object != nullptr)
     {
         value = func(json_object);
     }

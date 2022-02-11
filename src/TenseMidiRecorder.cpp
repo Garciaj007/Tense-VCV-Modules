@@ -1,3 +1,4 @@
+#include "MidiFile.h"
 #include "plugin.hpp"
 #include <osdialog.h>
 #include <sstream>
@@ -5,7 +6,6 @@
 #include <iostream>
 #include <fstream>
 #include <random>
-#include "MidiFile.h"
 
 static const char *MIDI_FILTER = "Midi (.mid):mid";
 static constexpr int MAX_CHANNEL_SIZE = 16;
@@ -28,10 +28,12 @@ static std::string HexStringToByteString(std::string hex)
 
 static uint8_t voltPerOctToMidi(float voltage)
 {
+	return 0;
 }
 
 static uint8_t voltVelToMidi(float voltage)
 {
+	return 0;
 }
 
 struct TenseMidiRecorder : Module

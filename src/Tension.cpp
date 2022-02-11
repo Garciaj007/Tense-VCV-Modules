@@ -4,8 +4,6 @@
 
 #define TENSION_DISPLAY_SIZE 32
 
-//TODO: For Tension 2, Custom Bezier Curves, Input for Trigger!, Bigger Button, Scope & Progress...
-
 struct Tension : Module
 {
 	enum ParamIds
@@ -19,7 +17,7 @@ struct Tension : Module
 	enum InputIds
 	{
 		CLOCKINPUT_INPUT,
-		RESETINPUT_INPUT,
+		TRIGGER_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds
@@ -45,12 +43,12 @@ struct Tension : Module
 	//* DONT SAVE with RESET *//
 
 	RefreshCounter refreshCounter;
-	dsp::SchmittTrigger clockTrigger, resetTrigger;
+	dsp::SchmittTrigger clockTrigger, inputTrigger;
 
 	double timeElapsed = 0.0; // Time that has elapsed
 	double duration = 0;	  // The total duration of the osc/animationFunc takes to complete
 	double phase = 0.0;		  // The time elapsed relative to the period of one function...
-	double amplitude = 0.0;
+	double amplitude = 0.0;   
 	double offset = 0.0;
 	double freq = 0.0;
 
@@ -88,7 +86,7 @@ struct Tension : Module
 		//	TODO V2
 		//	paramQuantities[RATIOSLIDER_PARAM]->snapEnabled = true; Enable Snapping Later in VCV Rack v2
 		//	configInput(CLOCKINPUT_INPUT, "Clock");
-		//	configInput(RESETINPUT_INPUT, "Reset");
+		//	configInput(TRIGGER_INPUT, "Trigger");
 		//
 		//	configOutput(GATEOUTPUT_OUTPUT, "GATE");
 		//	configOutput(OUTPUT_OUTPUT, "CV OUT");
@@ -108,12 +106,7 @@ struct Tension : Module
 
 	void reset(bool hard)
 	{
-		// sampleRate = (double)(APP->engine->getSampleRate());
-
-		// bufferedRatioKnob = params[RATIOSLIDER_PARAM].getValue();
-		
 		// Reset The Phase...
-		//phase = 0.0;
 		phase = 1.0 - phase;
 
 		if (hard)
@@ -136,9 +129,12 @@ struct Tension : Module
 
 	void dataFromJson(json_t *json) override
 	{
-		getFromJsonOrDefault(clockMode, json, "clockMode", json_integer_value, (int)ClockMode::CLOCK);
-		getFromJsonOrDefault(easeMode, json, "easeMode", json_integer_value, (int)Ease::LINEAR);
-		getFromJsonOrDefault(easeType, json, "easeType", json_integer_value, (int)Ease::BOTH);
+		auto* jsonDef = json_object_get(json, "clockMode");
+		if(jsonDef) clockMode = json_integer_value(jsonDef);
+		jsonDef = json_object_get(json, "easeMode");
+		if(jsonDef) easeMode = json_integer_value(jsonDef);
+		jsonDef = json_object_get(json, "easeType");
+		if(jsonDef) easeType = json_integer_value(jsonDef);
 	}
 
 	void process(const ProcessArgs &args) override
@@ -182,15 +178,6 @@ struct Tension : Module
 			isClockConnected = false;
 		}
 
-		// Reset Pin
-		if (inputs[RESETINPUT_INPUT].isConnected())
-		{
-			if (resetTrigger.process(inputs[RESETINPUT_INPUT].getVoltage()))
-			{
-				reset(true);
-			}
-		}
-
 		// GUI Refresh
 		if (refreshCounter.processInputs())
 		{
@@ -220,13 +207,14 @@ struct Tension : Module
 			}
 
 			// On Button Press, set isRunningToTrue...
-			const auto trigger_value = params[TRIGGER_PARAM].getValue();
-			if (bufferedTriggerButton != trigger_value)
+			// Input Takes Priority...
+			const auto _input = inputs[TRIGGER_INPUT].getVoltage() + params[TRIGGER_PARAM].getValue();
+			if (bufferedTriggerButton != _input)
 			{
-				bufferedTriggerButton = trigger_value;
-				b_buttonState = trigger_value == 0.0;
+				bufferedTriggerButton = _input;
+				b_buttonState = _input != 0.0;
 				reset(shouldResetHard);
-				outputs[GATEOUTPUT_OUTPUT].setVoltage(trigger_value);
+				outputs[GATEOUTPUT_OUTPUT].setVoltage(b_buttonState * 10.0);
 			}
 
 			const auto reset_value = params[RESET_PARAM].getValue();
@@ -247,7 +235,7 @@ struct Tension : Module
 		double tension = b_buttonState ? 1 - evaluate(phase) : evaluate(phase);
 
 		//outputs[GATEOUTPUT_OUTPUT].setVoltage(phase);
-		outputs[OUTPUT_OUTPUT].setVoltage(tension);
+		outputs[OUTPUT_OUTPUT].setVoltage(tension * 10.0); // Sets Voltage 0 V ... 10 V
 	}
 };
 
@@ -264,7 +252,7 @@ struct TensionWidget : ModuleWidget
 		addParam(createParamCentered<TTinyKnob>(mm2px(Vec(7.67, 56.241)), module, Tension::RATIOSLIDER_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.763, 71.419)), module, Tension::CLOCKINPUT_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.763, 86.659)), module, Tension::RESETINPUT_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.763, 86.659)), module, Tension::TRIGGER_INPUT));
 
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.763, 101.659)), module, Tension::GATEOUTPUT_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.763, 116.899)), module, Tension::OUTPUT_OUTPUT));
@@ -476,7 +464,7 @@ struct TensionWidget : ModuleWidget
 
 			drawBpmRatioText(args);
 			drawTypeText(args);
-			
+
 			// TODO...
 			// drawShape(args);
 			// drawProgress(args);
